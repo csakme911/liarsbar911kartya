@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liars Bar Kártya Sorsoló</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Alapvető beállítások */
+        body {
+            font-family: 'Arial', sans-serif; /* Alap betűtípus */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh; /* Teljes képernyő magasság */
+            background: linear-gradient(to bottom right, #333333, #1a1a1a); /* Sötét, elegáns háttér */
+            color: #eee;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow: hidden; /* Elrejti a görgetősávot */
+        }
+
+        h1 {
+            font-family: 'Press Start 2P', cursive; /* Egyedi, játékos betűtípus */
+            font-size: 1.8em;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #FFD700; /* Arany szín */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Gomb stílusok és animációk */
+        button {
+            padding: 18px 35px;
+            font-size: 22px;
+            cursor: pointer;
+            background-color: #E74C3C; /* Élénk piros szín */
+            color: white;
+            border: none;
+            border-radius: 10px;
+            margin-bottom: 40px;
+            transition: background-color 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Erősebb árnyék */
+            outline: none; /* Kikapcsolja a fókusz keretet */
+        }
+
+        button:hover {
+            background-color: #C0392B; /* Sötétebb piros hoverre */
+            transform: translateY(-3px); /* Kicsit feljebb ugrik */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        button:active {
+            background-color: #A93226; /* Még sötétebb nyomásra */
+            transform: translateY(0); /* Visszaáll az eredeti pozícióba */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Kisebb árnyék, "benyomódás" */
+        }
+
+        /* Kártya megjelenítő terület */
+        #card-display {
+            width: 180px;
+            height: 250px;
+            border: 4px solid #FFD700; /* Arany keret */
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #2c3e50; /* Sötétkék háttér a kártya helyén */
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); /* Mély árnyék */
+            position: relative; /* Pozícionáláshoz */
+        }
+
+        #card-image {
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+            object-fit: contain;
+            /* Kártya beúszó animáció */
+            animation: cardFadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes cardFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Media Queries (Reszponzivitás) */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 25px;
+            }
+            button {
+                padding: 15px 30px;
+                font-size: 20px;
+                margin-bottom: 30px;
+            }
+            #card-display {
+                width: 160px;
+                height: 230px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            h1 {
+                font-size: 1.2em;
+                margin-bottom: 20px;
+            }
+            button {
+                padding: 12px 25px;
+                font-size: 18px;
+                margin-bottom: 25px;
+            }
+            #card-display {
+                width: 140px;
+                height: 200px;
+                border-radius: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Liars Bar Kártya Sorsoló</h1>
+    <button id="drawCardBtn">Új kártya sorsolása</button>
+    <div id="card-display">
+        <img id="card-image" src="" alt="Kártya">
+    </div>
+
+    <audio id="background-music" src="background_music.mp3" preload="auto"></audio>
+    <audio id="draw-sound" src="card_draw_sound.mp3" preload="auto"></audio>
+
+    <script>
+        const cards = [
+            { name: 'Ász', chance: 24, image: 'asz.png' },
+            { name: 'Király', chance: 24, image: 'kiraly.png' },
+            { name: 'Dáma', chance: 24, image: 'dama.png' },
+            { name: 'Bubi', chance: 24, image: 'bubi.png' },
+            { name: 'Joker', chance: 4, image: 'joker.png' }
+        ];
+
+        const drawCardBtn = document.getElementById('drawCardBtn');
+        const cardImage = document.getElementById('card-image');
+        const backgroundMusic = document.getElementById('background-music');
+        const drawSound = document.getElementById('draw-sound');
+
+        // Eseményfigyelő a gombra
+        drawCardBtn.addEventListener('click', drawCard);
+
+        function drawCard() {
+            // Hangok lejátszása
+            backgroundMusic.currentTime = 0; // Mindig az elejétől játssza a zenét
+            backgroundMusic.play().catch(e => console.error("Háttérzene lejátszása sikertelen:", e));
+
+            drawSound.currentTime = 0; // Mindig az elejétől játssza a húzás hangot
+            drawSound.play().catch(e => console.error("Húzás hang lejátszása sikertelen:", e));
+
+            // Kártya sorsolása
+            let randomNumber = Math.random() * 100;
+            let cumulativeChance = 0;
+            let chosenCard = null;
+
+            for (const card of cards) {
+                cumulativeChance += card.chance;
+                if (randomNumber < cumulativeChance) {
+                    chosenCard = card;
+                    break;
+                }
+            }
+
+            // Kártya képének beállítása és megjelenítése animációval
+            if (chosenCard) {
+                cardImage.style.display = 'none'; // Elrejti az előző képet az animáció előtt
+                cardImage.src = chosenCard.image;
+                cardImage.alt = chosenCard.name;
+                // Kis késleltetés, hogy a display:none után legyen ideje az animációnak
+                setTimeout(() => {
+                    cardImage.style.display = 'block';
+                }, 50);
+            }
+
+            // Háttérzene leállítása 3 másodperc múlva
+            setTimeout(() => {
+                backgroundMusic.pause();
+                backgroundMusic.currentTime = 0; // Visszaállítja a zenét az elejére
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
